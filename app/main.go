@@ -28,6 +28,11 @@ import (
  */
 
 func main() {
+	// Will eventually kick off the web server and the garbage collector
+	// goroutine.
+	//
+	// Use manners.
+
 	// http.HandleFunc("/", homePage)
 	// http.ListenAndServe(":5000", nil)
 
