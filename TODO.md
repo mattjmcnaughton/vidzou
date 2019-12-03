@@ -2,7 +2,6 @@
 
 ## 2019-12-03
 
-- Write tests for `remote_uploader.go`
 - Decide on how we will use `fs.go`... is it necessary?
 - Write unit tests for `content_*`.
 

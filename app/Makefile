@@ -4,5 +4,5 @@ unit:
 integration:
 	go test -v -run Integration ./...
 
-test_all:
+test:
 	go test -v ./...

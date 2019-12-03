@@ -75,7 +75,9 @@ func (dc *DockerClient) RunContainer(imageName string, cmd []string, runContaine
 		Image: imageName,
 		Cmd:   cmd,
 	}
-	hostConfig := &container.HostConfig{}
+	hostConfig := &container.HostConfig{
+		AutoRemove: true,
+	}
 
 	if runContainerOpts.uid != "" {
 		containerConfig.User = runContainerOpts.uid
