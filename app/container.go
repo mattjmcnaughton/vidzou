@@ -56,6 +56,13 @@ func NewDockerClient() (*DockerClient, error) {
 // (i.e. could be used to run a container). We return an error only if we were
 // unable to ensure the image exists on the host.
 func (dc *DockerClient) EnsureImageAvailableOnHost(imageName string) error {
+	_, _, err := dc.cli.ImageInspectWithRaw(dc.ctx, imageName)
+
+	imageExistsOnHost := err == nil
+	if imageExistsOnHost {
+		return nil
+	}
+
 	reader, err := dc.cli.ImagePull(dc.ctx, imageName, types.ImagePullOptions{})
 	if err != nil {
 		return err

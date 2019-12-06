@@ -23,6 +23,7 @@ func TestS3ClientUploadFilePubliclyIntegration(t *testing.T) {
 	}
 	defer deleteTmpS3Bucket(tmpS3Bucket)
 
+	// Update to use `TmpFsClient`.
 	useDefaultTempDirectory := ""
 	tmpFile, err := ioutil.TempFile(useDefaultTempDirectory, "test.*.txt")
 	if err != nil {

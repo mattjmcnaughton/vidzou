@@ -1,9 +1,10 @@
 # TODO
 
-## 2019-12-03
+## 2019-12-08
 
-- Decide on how we will use `fs.go`... is it necessary?
-- Write unit tests for `content_*`.
+- Write tests for `content_(upload|garbage_collector)`. Can most likely use fake
+  remote store? Or a file system remote store...
+- Document (and maybe test) `fs.go`.
 
 ## On-deck
 
