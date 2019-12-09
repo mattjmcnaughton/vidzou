@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"time"
 
@@ -44,7 +45,13 @@ type s3ConfigurationOptions struct {
 	awsBucket string
 }
 
+type FakeRemoteStoreClient struct {
+	remoteFiles []*RemoteFile
+}
+
 var _ RemoteStoreClient = (*S3Client)(nil)
+
+var _ RemoteStoreClient = (*FakeRemoteStoreClient)(nil)
 
 // NewS3Client creates a new S3Client which conforms to our RemoteStoreClient
 // interface.
@@ -141,4 +148,56 @@ func (s *S3Client) DeleteFile(remoteFileName string) error {
 	})
 
 	return err
+}
+
+func NewFakeRemoteStoreClient() *FakeRemoteStoreClient {
+	return &FakeRemoteStoreClient{
+		remoteFiles: []*RemoteFile{},
+	}
+}
+
+func (f *FakeRemoteStoreClient) UploadFilePublicly(hostFilePath, remoteFileName string) (string, error) {
+	return "", fmt.Errorf("Cannot upload file directly... use `UploadFilesWithMockedAge` instead.")
+}
+
+func (f *FakeRemoteStoreClient) ListAllUploadedFiles() ([]*RemoteFile, error) {
+	// We need to copy `remoteFiles` into a stable slice so that anyone
+	// interacting with the returned slice sees a consistent list of
+	// remoteFiles (regardless of whether those files are deleted later,
+	// etc...).
+	stableRemoteFiles := make([]*RemoteFile, len(f.remoteFiles))
+	copy(stableRemoteFiles, f.remoteFiles)
+
+	return stableRemoteFiles, nil
+}
+
+func (f *FakeRemoteStoreClient) DeleteFile(remoteFileName string) error {
+	fileNotFound := -1
+	indiceOfFileToDelete := fileNotFound
+
+	for i, remoteFile := range f.remoteFiles {
+		if remoteFile.FilePath == remoteFileName {
+			indiceOfFileToDelete = i
+		}
+	}
+
+	if indiceOfFileToDelete != fileNotFound {
+		f.remoteFiles = append(f.remoteFiles[:indiceOfFileToDelete], f.remoteFiles[indiceOfFileToDelete+1:]...)
+	}
+
+	// Not considered an error to delete a file which already doesn't exist.
+	return nil
+}
+
+func (f *FakeRemoteStoreClient) UploadRandomFilesWithMockedAge(lastModifiedToNumFilesToCreate map[time.Time]int) {
+	for lastModifiedTime, numFilesToCreate := range lastModifiedToNumFilesToCreate {
+		for i := 0; i < numFilesToCreate; i++ {
+			remoteFile := &RemoteFile{
+				FilePath:     generateRandomString(16),
+				LastModified: lastModifiedTime,
+			}
+
+			f.remoteFiles = append(f.remoteFiles, remoteFile)
+		}
+	}
 }

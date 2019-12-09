@@ -2,9 +2,9 @@
 
 ## 2019-12-08
 
-- Write tests for `content_(upload|garbage_collector)`. Can most likely use fake
-  remote store? Or a file system remote store...
+- Write tests for `content_uploader.go`.
 - Document (and maybe test) `fs.go`.
+- Add documentation throughout.
 
 ## On-deck
 
