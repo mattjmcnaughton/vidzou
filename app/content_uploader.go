@@ -1,5 +1,11 @@
 package main
 
+import (
+	"fmt"
+	"os"
+	"path"
+)
+
 type ContentUploader interface {
 	// For now, we do not give the user any control over what we name the
 	// file remotely.
@@ -8,7 +14,6 @@ type ContentUploader interface {
 
 type RemoteStoreContentUploader struct {
 	remoteStoreClient RemoteStoreClient
-	fsClient          FsClient
 }
 
 var _ ContentUploader = (*RemoteStoreContentUploader)(nil)
@@ -19,16 +24,20 @@ func NewS3RemoteStoreContentUploader(fsClient FsClient, s3ConfigOptions *s3Confi
 		return nil, err
 	}
 
-	return NewRemoteStoreContentUploader(s3Client, fsClient), nil
+	return NewRemoteStoreContentUploader(s3Client), nil
 }
 
-func NewRemoteStoreContentUploader(remoteStoreClient RemoteStoreClient, fsClient FsClient) *RemoteStoreContentUploader {
+func NewRemoteStoreContentUploader(remoteStoreClient RemoteStoreClient) *RemoteStoreContentUploader {
 	return &RemoteStoreContentUploader{
 		remoteStoreClient: remoteStoreClient,
-		fsClient:          fsClient,
 	}
 }
 
 func (r *RemoteStoreContentUploader) UploadContentPublicly(hostLocation string) (string, error) {
-	return "", nil
+	if _, err := os.Stat(hostLocation); os.IsNotExist(err) || os.IsPermission(err) {
+		return "", fmt.Errorf("Error accessing file prior to upload: %s", err)
+	}
+
+	remoteFileName := path.Base(hostLocation)
+	return r.remoteStoreClient.UploadFilePublicly(hostLocation, remoteFileName)
 }

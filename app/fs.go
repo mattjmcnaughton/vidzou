@@ -6,6 +6,11 @@ import (
 	"path"
 )
 
+// TODO: Currently only ContentDownloader uses the `FsClient`. The
+// `ContentUploader` just reads directly from the file system using the full
+// path. I should think more about if `ContentUploader` should also be using
+// `FsClient`...
+
 type FsClient interface {
 	GetMountDirectory() string
 	GeneratePathForFile(fileName string) string

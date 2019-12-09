@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path"
 	"strings"
 )
@@ -22,7 +23,12 @@ type ContainerYoutubeDlContentDownloader struct {
 	fsClient        FsClient
 }
 
+type FakeContentDownloader struct {
+	fsClient FsClient
+}
+
 var _ ContentDownloader = (*ContainerYoutubeDlContentDownloader)(nil)
+var _ ContentDownloader = (*FakeContentDownloader)(nil)
 
 func NewDockerYoutubeDlContentDownloader(fsClient FsClient) (*ContainerYoutubeDlContentDownloader, error) {
 	dockerClient, err := NewDockerClient()
@@ -93,4 +99,23 @@ func (c *ContainerYoutubeDlContentDownloader) findFileUsingUniqueIdentifier(uniq
 	}
 
 	return "", fmt.Errorf("Cannot identify file with unique prefix: %s", uniqueOutputFilePrefix)
+}
+
+func NewFakeContentDownloader(fsClient FsClient) *FakeContentDownloader {
+	return &FakeContentDownloader{
+		fsClient: fsClient,
+	}
+}
+
+func (f *FakeContentDownloader) DownloadContent(remotePath string, downloadOptions *DownloadOptions) (string, error) {
+	fakeFileDownloadPath := path.Join(f.fsClient.GetMountDirectory(), generateRandomString(16))
+	fakeFileContents := []byte("hi everyone\n")
+	var defaultFilePerm os.FileMode = 0644
+
+	err := ioutil.WriteFile(fakeFileDownloadPath, fakeFileContents, defaultFilePerm)
+	if err != nil {
+		return "", err
+	}
+
+	return fakeFileDownloadPath, nil
 }

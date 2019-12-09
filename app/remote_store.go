@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"time"
 
@@ -157,7 +156,14 @@ func NewFakeRemoteStoreClient() *FakeRemoteStoreClient {
 }
 
 func (f *FakeRemoteStoreClient) UploadFilePublicly(hostFilePath, remoteFileName string) (string, error) {
-	return "", fmt.Errorf("Cannot upload file directly... use `UploadFilesWithMockedAge` instead.")
+	fakeFile := &RemoteFile{
+		FilePath:     remoteFileName,
+		LastModified: time.Now(),
+	}
+
+	f.remoteFiles = append(f.remoteFiles, fakeFile)
+
+	return "fake-presigned-url", nil
 }
 
 func (f *FakeRemoteStoreClient) ListAllUploadedFiles() ([]*RemoteFile, error) {
