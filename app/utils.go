@@ -9,6 +9,9 @@ import (
 // letters.
 const lowercaseLetters = "abcdefghijklmnopqrstuvxyz"
 
+// TODO: Use throughout the program.
+const defaultRandomStringLength = 16
+
 func generateRandomString(randomStringLength int) string {
 	ensureRandomness()
 
