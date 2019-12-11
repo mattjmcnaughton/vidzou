@@ -146,7 +146,14 @@ func (s *S3Client) DeleteFile(remoteFileName string) error {
 		Key:    aws.String(remoteFileName),
 	})
 
-	return err
+	if err != nil {
+		return err
+	}
+
+	return s.svc.WaitUntilObjectNotExists(&s3.HeadObjectInput{
+		Bucket: aws.String(s.configOptions.awsBucket),
+		Key:    aws.String(remoteFileName),
+	})
 }
 
 func NewFakeRemoteStoreClient() *FakeRemoteStoreClient {

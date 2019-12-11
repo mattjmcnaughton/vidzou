@@ -6,13 +6,7 @@ import (
 	"os"
 	"path"
 	"testing"
-
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 )
-
-const awsRegion = "us-east-1"
 
 func TestS3ClientUploadFilePubliclyIntegration(t *testing.T) {
 	markIntegrationTest(t)
@@ -58,72 +52,6 @@ func TestS3ClientUploadFilePubliclyIntegration(t *testing.T) {
 
 	// We don't actually check the file contents... I don't feel like doing
 	// so is necessary.
-}
-
-func createTmpS3Bucket() (string, error) {
-	svc, err := rawS3Client(awsRegion)
-	if err != nil {
-		return "", err
-	}
-
-	bucketNameLength := 16
-	randomBucketName := generateRandomString(bucketNameLength)
-
-	_, err = svc.CreateBucket(&s3.CreateBucketInput{
-		Bucket: aws.String(randomBucketName),
-	})
-	if err != nil {
-		return "", err
-	}
-
-	err = svc.WaitUntilBucketExists(&s3.HeadBucketInput{
-		Bucket: aws.String(randomBucketName),
-	})
-	if err != nil {
-		return "", err
-	}
-
-	return randomBucketName, nil
-}
-
-func deleteTmpS3Bucket(tmpS3BucketName string) error {
-	svc, err := rawS3Client(awsRegion)
-	if err != nil {
-		return err
-	}
-
-	if err := prepareTmpS3BucketForDeletion(svc, tmpS3BucketName); err != nil {
-		return err
-	}
-
-	_, err = svc.DeleteBucket(&s3.DeleteBucketInput{
-		Bucket: aws.String(tmpS3BucketName),
-	})
-	if err != nil {
-		return err
-	}
-
-	// We do not wait for the bucket to actually not appear anymore, because
-	// that operation can sometimes take a really long time... since we are
-	// using a unique name for each bucket, we aren't super concerned about
-	// starting a new test suite before the old bucket has been completely
-	// cleaned up.
-
-	return nil
-}
-
-func prepareTmpS3BucketForDeletion(svc *s3.S3, tmpS3BucketName string) error {
-	return deleteAllObjectsInBucket(svc, tmpS3BucketName)
-}
-
-// deleteAllObjectsInBucket exists because s3 requires a bucket be empty before
-// we delete it.
-func deleteAllObjectsInBucket(svc *s3.S3, tmpS3BucketName string) error {
-	deleteIter := s3manager.NewDeleteListIterator(svc, &s3.ListObjectsInput{
-		Bucket: aws.String(tmpS3BucketName),
-	})
-
-	return s3manager.NewBatchDeleteWithClient(svc).Delete(aws.BackgroundContext(), deleteIter)
 }
 
 func TestS3ClientUploadFilePubliclyFailWhenNonExistentLocalFileIntegration(t *testing.T) {

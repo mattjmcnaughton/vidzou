@@ -1,15 +1,9 @@
 # TODO
 
-## 2019-12-08
-
-- Write tests for `content_uploader.go`.
-- Document (and maybe test) `fs.go`.
-- Add documentation throughout.
-
 ## On-deck
 
-- Create basic e2e integration test not using the web server.
 - Web server...
+- Add documentation throughout.
 
 ## High-level
 

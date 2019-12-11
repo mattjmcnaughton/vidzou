@@ -6,7 +6,6 @@ import (
 	"testing"
 )
 
-const youtubeURL = "https://www.youtube.com/watch?v=hLswuIQ5Tjk"
 const invalidURL = "https://mattjmcnaughton.com/this-url/is-invalid"
 
 // Can do unit tests without the `Docker` component... is there value? Maybe do
@@ -59,6 +58,8 @@ func TestDockerContainerYoutubeDlContentDownloaderDownloadContentFailsWhenInvali
 	markIntegrationTest(t)
 
 	fsClient, err := NewTmpFsClient()
+	defer fsClient.CleanUp()
+
 	if err != nil {
 		t.Fatalf("Error generating fsClient: %s", err)
 	}
@@ -78,6 +79,4 @@ func TestDockerContainerYoutubeDlContentDownloaderDownloadContentFailsWhenInvali
 	if err == nil {
 		t.Fatalf("Should not be able to download content from invalid url")
 	}
-
-	fsClient.CleanUp()
 }

@@ -18,15 +18,6 @@ type RemoteStoreContentUploader struct {
 
 var _ ContentUploader = (*RemoteStoreContentUploader)(nil)
 
-func NewS3RemoteStoreContentUploader(fsClient FsClient, s3ConfigOptions *s3ConfigurationOptions) (*RemoteStoreContentUploader, error) {
-	s3Client, err := NewS3Client(s3ConfigOptions)
-	if err != nil {
-		return nil, err
-	}
-
-	return NewRemoteStoreContentUploader(s3Client), nil
-}
-
 func NewRemoteStoreContentUploader(remoteStoreClient RemoteStoreClient) *RemoteStoreContentUploader {
 	return &RemoteStoreContentUploader{
 		remoteStoreClient: remoteStoreClient,
