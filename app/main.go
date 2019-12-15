@@ -1,17 +1,36 @@
 package main
 
+import (
+	"flag"
+	"k8s.io/klog/v2"
+	"k8s.io/klog/v2/klogr"
+)
+
 func main() {
+	// Initialize a `klog` logger which I'll inject everywhere else.
+	klog.InitFlags(nil)
+	flag.Set("v", "2")
+	logger := klogr.New()
+
+	// TODO: Add prometheus metrics server.
+
 	tmpS3Bucket, err := createTmpS3Bucket()
 	if err != nil {
 		panic(err)
 	}
-	defer deleteTmpS3Bucket(tmpS3Bucket)
 
 	fsClient, err := NewTmpFsClient()
 	if err != nil {
 		panic(err)
 	}
-	defer fsClient.CleanUp()
+
+	cleanUpFunc := func() error {
+		if err := deleteTmpS3Bucket(tmpS3Bucket); err != nil {
+			return err
+		}
+
+		return fsClient.CleanUp()
+	}
 
 	s3ConfigOptions := &s3ConfigurationOptions{
 		awsRegion: awsRegion,
@@ -29,12 +48,14 @@ func main() {
 	uploader := NewRemoteStoreContentUploader(s3Client)
 	_ = NewRemoteStoreContentGarbageCollector(s3Client)
 
-	// The way we are killing the program in dev mode (with `ctrl-c`) is
-	// causing the go process to termiante before we run the defers. As a
-	// result, we need to manually clean up the s3 buckets. Add better
-	// signal handling (maybe using `braintree/manners`).
-	server := NewServer(8080, downloader, uploader)
-	server.ListenAndServe()
+	server := NewServer(8080, downloader, uploader, logger)
+	// POC logger
+	logger.V(2).Info("hi")
+	err = server.ListenAndServe(cleanUpFunc)
+
+	if err != nil {
+		panic(err)
+	}
 
 	// Launch garbage collector
 }

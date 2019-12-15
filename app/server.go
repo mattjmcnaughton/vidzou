@@ -2,9 +2,13 @@ package main
 
 import (
 	"fmt"
+	"github.com/braintree/manners"
+	"github.com/go-logr/logr"
 	"github.com/gorilla/mux"
 	"html/template"
 	"net/http"
+	"os"
+	"os/signal"
 )
 
 // Could define Server interface, but not sure there is any benefit...
@@ -18,9 +22,11 @@ type Server struct {
 	// Should be a richer interface... that we can make either consistent
 	// storage or ephemeral.
 	publicDownloadURLCache map[string]string
+
+	logger logr.Logger
 }
 
-func NewServer(port int, contentDownloader ContentDownloader, contentUploader ContentUploader) *Server {
+func NewServer(port int, contentDownloader ContentDownloader, contentUploader ContentUploader, logger logr.Logger) *Server {
 	publicDownloadURLCache := make(map[string]string)
 
 	return &Server{
@@ -28,18 +34,34 @@ func NewServer(port int, contentDownloader ContentDownloader, contentUploader Co
 		contentDownloader:      contentDownloader,
 		contentUploader:        contentUploader,
 		publicDownloadURLCache: publicDownloadURLCache,
+		logger:                 logger,
 	}
 }
 
-func (s *Server) ListenAndServe() {
+func (s *Server) ListenAndServe(cleanUpFunc func() error) error {
 	r := mux.NewRouter()
 
 	r.HandleFunc("/downloads", s.downloadsCreate).Methods("POST")
 	r.HandleFunc("/downloads/{id}", s.downloadsShow).Methods("GET")
 	r.HandleFunc("/", s.index).Methods("GET")
 
-	// TODO: Add safe shutdown of app.
-	http.ListenAndServe(fmt.Sprintf(":%d", s.port), r)
+	signalCh := make(chan os.Signal)
+	signal.Notify(signalCh, os.Interrupt, os.Kill)
+	terminateCh := make(chan error)
+	go s.handleShutdown(signalCh, terminateCh, cleanUpFunc)
+
+	manners.ListenAndServe(fmt.Sprintf(":%d", s.port), r)
+
+	// Do not stop program until receive message on terminate channel.
+	shutdownErr := <-terminateCh
+	return shutdownErr
+}
+
+func (s *Server) handleShutdown(signalCh <-chan os.Signal, terminateCh chan<- error, cleanUpFunc func() error) {
+	<-signalCh
+	s.logger.Info("Handling shutdown")
+	manners.Close()
+	terminateCh <- cleanUpFunc()
 }
 
 func (s *Server) index(w http.ResponseWriter, r *http.Request) {

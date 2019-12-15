@@ -2,9 +2,9 @@
 
 ## On-deck
 
-- Web server...
+- Web server:
+  - Unit testing of web server and single simple e2e test.
 - Add documentation throughout.
-- Add effective logging.
 
 ## High-level
 
