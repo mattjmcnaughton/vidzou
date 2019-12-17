@@ -3,8 +3,9 @@
 ## On-deck
 
 - Web server:
-  - Unit testing of web server and single simple e2e test.
-- Add documentation throughout.
+  - Unit testing of web server.
+- Add logging throughout.
+- Deploy to web (with auth) even though the UI is horrible...
 
 ## High-level
 
