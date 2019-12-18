@@ -22,7 +22,7 @@ func TestRemoteStoreContentGarbageCollectDeleteStaleFiles(t *testing.T) {
 
 	fakeRemoteStoreClient.UploadRandomFilesWithMockedAge(lastModifiedToNumFilesToCreate)
 
-	garbageCollector := NewRemoteStoreContentGarbageCollector(fakeRemoteStoreClient)
+	garbageCollector := NewRemoteStoreContentGarbageCollector(fakeRemoteStoreClient, testLogger)
 	garbageCollector.DeleteStaleFiles(cutoffTime)
 
 	stillExistingFiles, _ := fakeRemoteStoreClient.ListAllUploadedFiles()

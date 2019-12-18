@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/sclevine/agouti"
-	"k8s.io/klog/v2/klogr"
 )
 
 const testServerPort = 8081
@@ -91,19 +90,17 @@ func runWebServer() (cleanUpFunc, error) {
 		awsRegion: awsRegion,
 		awsBucket: tmpS3Bucket,
 	}
-	s3Client, err := NewS3Client(s3ConfigOptions)
+	s3Client, err := NewS3Client(s3ConfigOptions, testLogger)
 	if err != nil {
 		return cleanUpFunc, err
 	}
 
-	downloader, err := NewDockerYoutubeDlContentDownloader(fsClient)
+	downloader, err := NewDockerYoutubeDlContentDownloader(fsClient, testLogger)
 	if err != nil {
 		return cleanUpFunc, err
 	}
-	uploader := NewRemoteStoreContentUploader(s3Client)
-
-	logger := klogr.New()
-	server := NewServer(testServerPort, downloader, uploader, logger)
+	uploader := NewRemoteStoreContentUploader(s3Client, testLogger)
+	server := NewServer(testServerPort, downloader, uploader, testLogger)
 
 	go func() {
 		server.ListenAndServe(func() error {

@@ -2,10 +2,9 @@
 
 ## On-deck
 
+- Deploy to web (with auth) even though the UI is horrible...
 - Web server:
   - Unit testing of web server.
-- Add logging throughout.
-- Deploy to web (with auth) even though the UI is horrible...
 
 ## High-level
 

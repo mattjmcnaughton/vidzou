@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/go-logr/logr"
 )
 
 // Eventually, we want this to be a parameter?
@@ -32,6 +33,7 @@ type S3Client struct {
 	svc           *s3.S3
 	uploader      *s3manager.Uploader
 	configOptions *s3ConfigurationOptions
+	logger        logr.Logger
 }
 
 type s3ConfigurationOptions struct {
@@ -49,12 +51,12 @@ type FakeRemoteStoreClient struct {
 }
 
 var _ RemoteStoreClient = (*S3Client)(nil)
-
 var _ RemoteStoreClient = (*FakeRemoteStoreClient)(nil)
 
 // NewS3Client creates a new S3Client which conforms to our RemoteStoreClient
 // interface.
-func NewS3Client(configOptions *s3ConfigurationOptions) (*S3Client, error) {
+func NewS3Client(configOptions *s3ConfigurationOptions, logger logr.Logger) (*S3Client, error) {
+	logger.V(3).Info("Establishing new aws session")
 	sess, err := session.NewSession(&aws.Config{
 		Region: aws.String(configOptions.awsRegion),
 	})
@@ -62,6 +64,7 @@ func NewS3Client(configOptions *s3ConfigurationOptions) (*S3Client, error) {
 		return nil, err
 	}
 
+	logger.V(3).Info("Establishing new s3 svc and uploader")
 	svc := s3.New(sess)
 	uploader := s3manager.NewUploader(sess)
 
@@ -70,6 +73,7 @@ func NewS3Client(configOptions *s3ConfigurationOptions) (*S3Client, error) {
 		svc:           svc,
 		uploader:      uploader,
 		configOptions: configOptions,
+		logger:        logger,
 	}
 
 	return s3Client, nil
@@ -80,6 +84,7 @@ func NewS3Client(configOptions *s3ConfigurationOptions) (*S3Client, error) {
 // entails uploading the file to an S3 bucket, and then generating and returning a presigned
 // url.
 func (s *S3Client) UploadFilePublicly(hostFilePath, remoteFileName string) (string, error) {
+	s.logger.V(2).Info("Uploading file publicly", "hostFilePath", hostFilePath, "remoteFileName", remoteFileName)
 	if err := s.uploadFile(hostFilePath, remoteFileName); err != nil {
 		return "", err
 	}
@@ -103,11 +108,14 @@ func (s *S3Client) uploadFile(hostFilePath, remoteFileName string) error {
 }
 
 func (s *S3Client) generatePublicURLForUploadedFile(remoteFileName string) (string, error) {
+	s.logger.V(3).Info("Generating public URL for remote file", "remoteFileName", remoteFileName)
+
 	objectRequest, _ := s.svc.GetObjectRequest(&s3.GetObjectInput{
 		Bucket: aws.String(s.configOptions.awsBucket),
 		Key:    aws.String(remoteFileName),
 	})
 
+	s.logger.V(3).Info("Presigning URL")
 	urlStr, err := objectRequest.Presign(presignTime)
 	if err != nil {
 		return "", err
@@ -117,6 +125,7 @@ func (s *S3Client) generatePublicURLForUploadedFile(remoteFileName string) (stri
 }
 
 func (s *S3Client) ListAllUploadedFiles() ([]*RemoteFile, error) {
+	s.logger.V(3).Info("Listing all uploaded files")
 	resp, err := s.svc.ListObjectsV2(&s3.ListObjectsV2Input{
 		Bucket: aws.String(s.configOptions.awsBucket),
 	})
@@ -138,6 +147,8 @@ func (s *S3Client) ListAllUploadedFiles() ([]*RemoteFile, error) {
 }
 
 func (s *S3Client) DeleteFile(remoteFileName string) error {
+	s.logger.V(3).Info("Deleting file", "remoteFileName", remoteFileName)
+
 	// Interestingly, `DeleteObject` spec indicates that deleting an object which
 	// doesn't exist is not considered an error
 	// (https://docs.aws.amazon.com/sdk-for-go/api/service/s3/#S3.DeleteObject).
@@ -150,6 +161,7 @@ func (s *S3Client) DeleteFile(remoteFileName string) error {
 		return err
 	}
 
+	s.logger.V(3).Info("Waiting for deleted file to not exist", "remoteFileName", remoteFileName)
 	return s.svc.WaitUntilObjectNotExists(&s3.HeadObjectInput{
 		Bucket: aws.String(s.configOptions.awsBucket),
 		Key:    aws.String(remoteFileName),

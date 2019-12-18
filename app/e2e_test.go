@@ -28,17 +28,17 @@ func TestAppE2ENoHTTPIntegration(t *testing.T) {
 		awsRegion: awsRegion,
 		awsBucket: tmpS3Bucket,
 	}
-	s3Client, err := NewS3Client(s3ConfigOptions)
+	s3Client, err := NewS3Client(s3ConfigOptions, testLogger)
 	if err != nil {
 		t.Fatalf("Error creating new S3 Client: %s", err)
 	}
 
-	downloader, err := NewDockerYoutubeDlContentDownloader(fsClient)
+	downloader, err := NewDockerYoutubeDlContentDownloader(fsClient, testLogger)
 	if err != nil {
 		t.Fatalf("Error creating content downloader: %s", err)
 	}
-	uploader := NewRemoteStoreContentUploader(s3Client)
-	garbageCollector := NewRemoteStoreContentGarbageCollector(s3Client)
+	uploader := NewRemoteStoreContentUploader(s3Client, testLogger)
+	garbageCollector := NewRemoteStoreContentGarbageCollector(s3Client, testLogger)
 
 	downloadOptions := &DownloadOptions{
 		audioOnly: true,

@@ -31,7 +31,7 @@ func TestS3ClientUploadFilePubliclyIntegration(t *testing.T) {
 		awsBucket: tmpS3Bucket,
 	}
 
-	s3Client, err := NewS3Client(s3ConfigOptions)
+	s3Client, err := NewS3Client(s3ConfigOptions, testLogger)
 	if err != nil {
 		t.Fatalf("Error creating new S3 Client: %s", err)
 	}
@@ -68,7 +68,7 @@ func TestS3ClientUploadFilePubliclyFailWhenNonExistentLocalFileIntegration(t *te
 		awsBucket: tmpS3Bucket,
 	}
 
-	s3Client, err := NewS3Client(s3ConfigOptions)
+	s3Client, err := NewS3Client(s3ConfigOptions, testLogger)
 	if err != nil {
 		t.Fatalf("Error creating new S3 Client: %s", err)
 	}
@@ -100,7 +100,7 @@ func TestS3ClientUploadFilePubliclyFailWhenInvalidRemoteConfigurationIntegration
 		awsBucket: nonExistentS3Bucket,
 	}
 
-	s3Client, err := NewS3Client(s3ConfigOptions)
+	s3Client, err := NewS3Client(s3ConfigOptions, testLogger)
 	if err != nil {
 		t.Fatalf("Error creating new S3 Client: %s", err)
 	}
@@ -136,7 +136,7 @@ func TestS3ClientListAllUploadedFilesIntegration(t *testing.T) {
 		awsBucket: tmpS3Bucket,
 	}
 
-	s3Client, err := NewS3Client(s3ConfigOptions)
+	s3Client, err := NewS3Client(s3ConfigOptions, testLogger)
 	if err != nil {
 		t.Fatalf("Error creating new S3 Client: %s", err)
 	}
@@ -167,7 +167,7 @@ func TestS3ClientListAllUploadFilesFailWhenInvalidRemoteConfigurationIntegration
 		awsBucket: nonExistentS3Bucket,
 	}
 
-	s3Client, err := NewS3Client(s3ConfigOptions)
+	s3Client, err := NewS3Client(s3ConfigOptions, testLogger)
 	if err != nil {
 		t.Fatalf("Error creating new S3 Client: %s", err)
 	}
@@ -200,7 +200,7 @@ func TestS3ClientDeleteFileIntegration(t *testing.T) {
 		awsBucket: tmpS3Bucket,
 	}
 
-	s3Client, err := NewS3Client(s3ConfigOptions)
+	s3Client, err := NewS3Client(s3ConfigOptions, testLogger)
 	if err != nil {
 		t.Fatalf("Error creating new S3 Client: %s", err)
 	}
@@ -243,7 +243,7 @@ func TestS3ClientDeleteFileFailWhenInvalidRemoteConfigurationIntegration(t *test
 		awsBucket: nonExistentS3Bucket,
 	}
 
-	s3Client, err := NewS3Client(s3ConfigOptions)
+	s3Client, err := NewS3Client(s3ConfigOptions, testLogger)
 	if err != nil {
 		t.Fatalf("Error creating new S3 Client: %s", err)
 	}

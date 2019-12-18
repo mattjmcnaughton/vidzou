@@ -16,6 +16,8 @@ type FsClient interface {
 	GeneratePathForFile(fileName string) string
 }
 
+// Not injecting logger bc right now there's nothing I want to log... we could
+// update this decision later if there's a good reason.
 type TmpFsClient struct {
 	baseDirectory string
 }

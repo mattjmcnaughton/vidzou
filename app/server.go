@@ -39,6 +39,7 @@ func NewServer(port int, contentDownloader ContentDownloader, contentUploader Co
 }
 
 func (s *Server) ListenAndServe(cleanUpFunc func() error) error {
+	s.logger.V(2).Info("Creating and launching web server")
 	r := mux.NewRouter()
 
 	r.HandleFunc("/downloads", s.downloadsCreate).Methods("POST")
@@ -59,18 +60,22 @@ func (s *Server) ListenAndServe(cleanUpFunc func() error) error {
 
 func (s *Server) handleShutdown(signalCh <-chan os.Signal, terminateCh chan<- error, cleanUpFunc func() error) {
 	<-signalCh
-	s.logger.Info("Handling shutdown")
+	s.logger.V(2).Info("Handling shutdown signal to server")
 	manners.Close()
 	terminateCh <- cleanUpFunc()
 }
 
 func (s *Server) index(w http.ResponseWriter, r *http.Request) {
+	s.logger.V(2).Info("Serving request", "endpoint", "GET#index")
 	t := template.Must(template.ParseFiles("templates/index.html"))
 	t.Execute(w, nil)
 }
 
 func (s *Server) downloadsCreate(w http.ResponseWriter, r *http.Request) {
-	// TODO: Decide how I want to handle http errors.
+	s.logger.V(2).Info("Serving request", "endpoint", "POST#downloads")
+
+	// TODO: Decide how I want to handle http errors. We should definitely
+	// be logging them.
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, fmt.Sprintf("Unable to parse form: %s", err), http.StatusInternalServerError)
 		return
@@ -92,6 +97,7 @@ func (s *Server) downloadsCreate(w http.ResponseWriter, r *http.Request) {
 
 	// So can we redirect via an id... Do we need to make accessing this url
 	// cache threadsafe?
+	s.logger.V(3).Info("Content download completed... id to cache")
 	downloadId := generateRandomString(defaultRandomStringLength)
 	s.publicDownloadURLCache[downloadId] = publicURL
 
@@ -104,6 +110,7 @@ type downloadShowPage struct {
 }
 
 func (s *Server) downloadsShow(w http.ResponseWriter, r *http.Request) {
+	s.logger.V(2).Info("Serving request", "endpoint", "GET#downloads/:id")
 	vars := mux.Vars(r)
 
 	publicDownloadURL, found := s.publicDownloadURLCache[vars["id"]]

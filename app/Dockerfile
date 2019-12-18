@@ -1,3 +1,7 @@
+# While this Dockerfile exists, I'm not actually sure if initially I want to run
+# the app in a Dockerfile, or instead just build a go binary and deploy it via a
+# simple systemd service... tbd.
+#
 # Run the resulting image with the following:
 #
 # Add to Makefile.

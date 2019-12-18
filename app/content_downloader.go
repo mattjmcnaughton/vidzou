@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/go-logr/logr"
 	"io/ioutil"
 	"os"
 	"path"
@@ -21,6 +22,7 @@ type DownloadOptions struct {
 type ContainerYoutubeDlContentDownloader struct {
 	containerClient ContainerClient
 	fsClient        FsClient
+	logger          logr.Logger
 }
 
 type FakeContentDownloader struct {
@@ -30,23 +32,25 @@ type FakeContentDownloader struct {
 var _ ContentDownloader = (*ContainerYoutubeDlContentDownloader)(nil)
 var _ ContentDownloader = (*FakeContentDownloader)(nil)
 
-func NewDockerYoutubeDlContentDownloader(fsClient FsClient) (*ContainerYoutubeDlContentDownloader, error) {
-	dockerClient, err := NewDockerClient()
+func NewDockerYoutubeDlContentDownloader(fsClient FsClient, logger logr.Logger) (*ContainerYoutubeDlContentDownloader, error) {
+	dockerClient, err := NewDockerClient(logger)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewContainerYoutubeDlContentDownloader(dockerClient, fsClient), nil
+	return NewContainerYoutubeDlContentDownloader(dockerClient, fsClient, logger), nil
 }
 
-func NewContainerYoutubeDlContentDownloader(containerClient ContainerClient, fsClient FsClient) *ContainerYoutubeDlContentDownloader {
+func NewContainerYoutubeDlContentDownloader(containerClient ContainerClient, fsClient FsClient, logger logr.Logger) *ContainerYoutubeDlContentDownloader {
 	return &ContainerYoutubeDlContentDownloader{
 		containerClient: containerClient,
 		fsClient:        fsClient,
+		logger:          logger,
 	}
 }
 
 func (c *ContainerYoutubeDlContentDownloader) DownloadContent(remotePath string, downloadOptions *DownloadOptions) (string, error) {
+	c.logger.V(3).Info("Downloading content using ContainerYoutubeDl", "remotePath", remotePath)
 	// Image should be specified as constant elsewhere, probably?
 	image := "mattjmcnaughton/youtube-dl:0.0.1.a"
 	// Mount directory should be specified as contant? Must match the
@@ -57,13 +61,15 @@ func (c *ContainerYoutubeDlContentDownloader) DownloadContent(remotePath string,
 	// system (as we can't predict the title, extension, etc...)
 	uniqueOutputFilePrefix := generateRandomString(8)
 	fileNameTemplate := fmt.Sprintf("%s/%s-%%(title)s.%%(ext)s", youtubeDlMountDirectory, uniqueOutputFilePrefix)
+	c.logger.V(3).Info("Generated fileNameTemplate", "fileNameTemplate", fileNameTemplate)
 
 	cmd := []string{"-o", fileNameTemplate, remotePath}
-
 	if downloadOptions.audioOnly {
+		c.logger.V(2).Info("Restricting download to audio only")
 		audioOnlyYoutubeDlOptions := []string{"-x", "--audio-format", defaultAudioFormat}
 		cmd = append(audioOnlyYoutubeDlOptions, cmd...)
 	}
+	c.logger.V(3).Info("Issuing the following args to the containerized youtube dl process", "args", cmd)
 
 	binds := []string{
 		fmt.Sprintf("%s:%s", c.fsClient.GetMountDirectory(), youtubeDlMountDirectory),
@@ -87,6 +93,8 @@ func (c *ContainerYoutubeDlContentDownloader) DownloadContent(remotePath string,
 // We will use this unique prefix for identifying the file on the file
 // system (as we can't predict the title, extension, etc...)
 func (c *ContainerYoutubeDlContentDownloader) findFileUsingUniqueIdentifier(uniqueOutputFilePrefix string) (string, error) {
+	c.logger.V(3).Info("Identifying file using unique id", "uniqueIdentifier", uniqueOutputFilePrefix)
+
 	filesInDir, err := ioutil.ReadDir(c.fsClient.GetMountDirectory())
 	if err != nil {
 		return "", err

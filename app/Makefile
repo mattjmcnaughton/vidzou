@@ -8,4 +8,4 @@ test:
 	go test -v -count=1 ./...
 
 run:
-	go build -o main && ./main
+	go build -o main && ./main -local -v 3

@@ -22,7 +22,7 @@ func TestDockerContainerYoutubeDlContentDownloaderDownloadContentIntegration(t *
 			t.Fatalf("Error generating fsClient: %s", err)
 		}
 
-		contentDownloader, err := NewDockerYoutubeDlContentDownloader(fsClient)
+		contentDownloader, err := NewDockerYoutubeDlContentDownloader(fsClient, testLogger)
 		if err != nil {
 			t.Fatalf("Error creating content downloader: %s", err)
 		}
@@ -64,7 +64,7 @@ func TestDockerContainerYoutubeDlContentDownloaderDownloadContentFailsWhenInvali
 		t.Fatalf("Error generating fsClient: %s", err)
 	}
 
-	contentDownloader, err := NewDockerYoutubeDlContentDownloader(fsClient)
+	contentDownloader, err := NewDockerYoutubeDlContentDownloader(fsClient, testLogger)
 	if err != nil {
 		t.Fatalf("Error creating content downloader: %s", err)
 	}

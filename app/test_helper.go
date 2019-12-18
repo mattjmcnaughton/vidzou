@@ -1,12 +1,16 @@
 package main
 
 import (
+	logrtesting "github.com/go-logr/logr/testing"
 	"testing"
 	"time"
 )
 
 // We use this url for testing our downloaders... video I own :)
 const youtubeURL = "https://www.youtube.com/watch?v=hLswuIQ5Tjk"
+
+// We may not want this to be a NullLogger long term...
+var testLogger = logrtesting.NullLogger{}
 
 // markIntegrationTest indicates a test is an integration test, and should be
 // skipped when we run go test with `-short`. We classify integration tests as

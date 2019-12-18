@@ -14,7 +14,7 @@ import (
 func TestDockerClientEnsureImageAvailableOnHostIntegration(t *testing.T) {
 	markIntegrationTest(t)
 
-	dockerClient, err := NewDockerClient()
+	dockerClient, err := NewDockerClient(testLogger)
 	if err != nil {
 		t.Fatalf("Error creating docker client: %s", err)
 	}
@@ -68,7 +68,7 @@ func testImageAvailableOnHost(t *testing.T, imageName string) {
 func TestDockerClientEnsureImageAvailableOnHostImageAlreadyExistsIntegration(t *testing.T) {
 	markIntegrationTest(t)
 
-	dockerClient, err := NewDockerClient()
+	dockerClient, err := NewDockerClient(testLogger)
 	if err != nil {
 		t.Fatalf("Error creating docker client: %s", err)
 	}
@@ -92,7 +92,7 @@ func TestDockerClientEnsureImageAvailableOnHostImageAlreadyExistsIntegration(t *
 func TestDockerClientEnsureImageAvailableOnHostFailsOnNonExistentImageIntegration(t *testing.T) {
 	markIntegrationTest(t)
 
-	dockerClient, err := NewDockerClient()
+	dockerClient, err := NewDockerClient(testLogger)
 	if err != nil {
 		t.Fatalf("Error creating docker client: %s", err)
 	}
@@ -107,7 +107,7 @@ func TestDockerClientEnsureImageAvailableOnHostFailsOnNonExistentImageIntegratio
 func TestDockerClientRunContainerIntegration(t *testing.T) {
 	markIntegrationTest(t)
 
-	dockerClient, err := NewDockerClient()
+	dockerClient, err := NewDockerClient(testLogger)
 	if err != nil {
 		t.Fatalf("Error creating docker client: %s", err)
 	}
@@ -131,7 +131,7 @@ func TestDockerClientRunContainerIntegration(t *testing.T) {
 func TestDockerClientRunContainerFailsWhenContainerFailsIntegration(t *testing.T) {
 	markIntegrationTest(t)
 
-	dockerClient, err := NewDockerClient()
+	dockerClient, err := NewDockerClient(testLogger)
 	if err != nil {
 		t.Fatalf("Error creating docker client: %s", err)
 	}
@@ -155,7 +155,7 @@ func TestDockerClientRunContainerFailsWhenContainerFailsIntegration(t *testing.T
 func TestDockerClientRunContainerWithBindsIntegration(t *testing.T) {
 	markIntegrationTest(t)
 
-	dockerClient, err := NewDockerClient()
+	dockerClient, err := NewDockerClient(testLogger)
 	if err != nil {
 		t.Fatalf("Error creating docker client: %s", err)
 	}
@@ -198,7 +198,7 @@ func TestDockerClientRunContainerWithBindsIntegration(t *testing.T) {
 func TestDockerClientRunContainerWithUidIntegration(t *testing.T) {
 	markIntegrationTest(t)
 
-	dockerClient, err := NewDockerClient()
+	dockerClient, err := NewDockerClient(testLogger)
 	if err != nil {
 		t.Fatalf("Error creating docker client: %s", err)
 	}

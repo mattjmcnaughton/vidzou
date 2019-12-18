@@ -13,7 +13,7 @@ func TestRemoteStoreContentUploaderUploadContentPublicly(t *testing.T) {
 	}
 
 	fakeContentDownloader := NewFakeContentDownloader(tmpFsClient)
-	uploader := NewRemoteStoreContentUploader(fakeRemoteStoreClient)
+	uploader := NewRemoteStoreContentUploader(fakeRemoteStoreClient, testLogger)
 
 	remotePath := "https://mattjmcnaughton.com/fake-remote-path-does-not-matter.mp3"
 	downloadOptions := &DownloadOptions{}
