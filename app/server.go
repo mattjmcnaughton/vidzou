@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"syscall"
 )
 
 // Could define Server interface, but not sure there is any benefit...
@@ -47,7 +48,7 @@ func (s *Server) ListenAndServe(cleanUpFunc func() error) error {
 	r.HandleFunc("/", s.index).Methods("GET")
 
 	signalCh := make(chan os.Signal)
-	signal.Notify(signalCh, os.Interrupt, os.Kill)
+	signal.Notify(signalCh, os.Interrupt, os.Kill, syscall.SIGTERM)
 	terminateCh := make(chan error)
 	go s.handleShutdown(signalCh, terminateCh, cleanUpFunc)
 
