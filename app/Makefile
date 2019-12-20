@@ -7,5 +7,8 @@ integration:
 test:
 	go test -v -count=1 ./...
 
-run:
-	go build -o main && ./main -local -v 3
+build:
+	go build -o main
+
+run: build
+	./main -local -v 3
