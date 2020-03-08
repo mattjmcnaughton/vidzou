@@ -8,7 +8,7 @@
 
 ## High-level
 
-- Rename/upload to Github?
 - Setup CI/CD w/ golint and static analysis
+- Improve documentation
 - Better policy/justification for public/private.
 - Potentially split up into multiple modules.

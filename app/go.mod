@@ -1,4 +1,4 @@
-module mattjmcnaughton/web-youtube-dl
+module mattjmcnaughton/webzou
 
 go 1.13
 
