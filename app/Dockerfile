@@ -1,14 +1,8 @@
-# While this Dockerfile exists, I'm not actually sure if initially I want to run
-# the app in a Dockerfile, or instead just build a go binary and deploy it via a
-# simple systemd service... tbd.
-#
 # Run the resulting image with the following:
-#
-# Add to Makefile.
 #
 # docker run -it \
 #   -v /tmp:/tmp \
-#   -v $HOME/.aws:/home/s-go/.aws \
+#   -v $HOME/.aws:/home/s-vidzou/.aws \
 #   -v /var/run/docker.sock:/var/run/docker.sock \
 #   --group-add 999 \ # The docker group...
 #   -p 8080:8080 \
@@ -24,10 +18,10 @@ RUN cd /src && go build -o main
 FROM alpine
 # The `uid` must be the same as the user which owns the ~/.aws directory...
 # Or the ~/.aws directory must be group readable.
-RUN adduser --disabled-password --uid 1000 s-go
-WORKDIR /app
-COPY --from=build-env /src/main /app/
-COPY --from=build-env /src/templates /app/templates
-RUN chown -R s-go /app
-USER s-go
+RUN adduser --disabled-password --uid 1000 s-vidzou
+WORKDIR /vidzou
+COPY --from=build-env /src/main /vidzou/
+COPY --from=build-env /src/templates /vidzou/templates
+RUN chown -R s-vidzou /vidzou
+USER s-vidzou
 ENTRYPOINT ./main
