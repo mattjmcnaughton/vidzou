@@ -4,6 +4,7 @@ import (
 	"flag"
 	"k8s.io/klog/v2"
 	"k8s.io/klog/v2/klogr"
+	"os"
 	"strconv"
 )
 
@@ -13,7 +14,7 @@ import (
 const defaultLogLevel = 2
 
 var runningLocally = flag.Bool("local", false, "run app locally")
-var s3Bucket = flag.String("s3_bucket", "", "s3 bucket in which to store info")
+var s3Bucket = flag.String("s3_bucket", os.Getenv("VIDZOU_S3_BUCKET"), "s3 bucket in which to store info")
 
 func main() {
 	initAndParseFlags()
@@ -79,7 +80,7 @@ func main() {
 	uploader := NewRemoteStoreContentUploader(s3Client, logger)
 	_ = NewRemoteStoreContentGarbageCollector(s3Client, logger)
 
-	// Launch garbage collector in a separate goroutine.
+	// @TODO(mattjmcnaughton) Launch garbage collector in a separate goroutine.
 
 	server := NewServer(8080, downloader, uploader, logger)
 	err = server.ListenAndServe(cleanUpFunc)
