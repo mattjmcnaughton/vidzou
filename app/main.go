@@ -2,9 +2,10 @@ package main
 
 import (
 	"flag"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
 	"k8s.io/klog/v2"
 	"k8s.io/klog/v2/klogr"
-	"os"
 	"strconv"
 )
 
@@ -14,7 +15,14 @@ import (
 const defaultLogLevel = 2
 
 var runningLocally = flag.Bool("local", false, "run app locally")
-var s3Bucket = flag.String("s3_bucket", os.Getenv("VIDZOU_S3_BUCKET"), "s3 bucket in which to store info")
+var s3Bucket = flag.String("s3_bucket", "", "s3 bucket in which to store info")
+var configFilePath = flag.String("config_file_path", "", "path to yaml config file")
+
+// @TODO(mattjmcnaughton) Need to refactor how we handle config... it shouldn't
+// all be in the main file, it should have better unit tests, etc...
+type config struct {
+	S3Bucket string `yaml:"s3_bucket"`
+}
 
 func main() {
 	initAndParseFlags()
@@ -38,11 +46,24 @@ func main() {
 		}
 	} else {
 		logger.V(2).Info("Running remotely... do not attempt create s3 bucket")
-		if len(*s3Bucket) == 0 {
-			panic("Must pass valid s3_bucket")
+
+		// @TODO(mattjmcnaughton) this method of processing the configuration is far from
+		// optimal...
+		if len(*configFilePath) != 0 {
+			logger.V(2).Info("Retrieving bucket name from config file")
+			s3BucketName, err = parseBucketNameFromConfigFile(*configFilePath)
+			if err != nil {
+				panic("Error parsing bucket name from config file")
+			}
+		} else {
+			logger.V(2).Info("Retrieving bucket name from command line argument")
+			if len(*s3Bucket) == 0 {
+				panic("Must pass valid s3_bucket")
+			}
+
+			s3BucketName = *s3Bucket
 		}
 
-		s3BucketName = *s3Bucket
 		s3CleanUp = func() error {
 			return nil
 		}
@@ -95,4 +116,20 @@ func initAndParseFlags() {
 	klog.InitFlags(nil)
 	flag.Set("v", strconv.Itoa(defaultLogLevel))
 	flag.Parse()
+}
+
+func parseBucketNameFromConfigFile(configFilePath string) (string, error) {
+	yamlFile, err := ioutil.ReadFile(configFilePath)
+
+	if err != nil {
+		return "", err
+	}
+
+	var conf config
+	err = yaml.Unmarshal(yamlFile, &conf)
+	if err != nil {
+		return "", err
+	}
+
+	return conf.S3Bucket, nil
 }
