@@ -1,9 +1,11 @@
 package main
 
 import (
-	logrtesting "github.com/go-logr/logr/testing"
 	"testing"
 	"time"
+
+	"github.com/docker/docker/api/types"
+	logrtesting "github.com/go-logr/logr/testing"
 )
 
 // We use this url for testing our downloaders... video I own :)
@@ -35,4 +37,35 @@ func retryWithTimeout(attempts int, sleep time.Duration, fn func() error) error 
 	}
 
 	return nil
+}
+
+func ensureImageNotOnHost(imageName string) error {
+	cli, ctx, err := rawDockerClient()
+	if err != nil {
+		return err
+	}
+
+	_, _, err = cli.ImageInspectWithRaw(ctx, imageName)
+
+	imageDoesNotExistOnHost := err != nil
+	if imageDoesNotExistOnHost {
+		return nil
+	}
+
+	_, err = cli.ImageRemove(ctx, imageName, types.ImageRemoveOptions{})
+	return err
+}
+
+func testImageAvailableOnHost(t *testing.T, imageName string) {
+	t.Helper()
+
+	cli, ctx, err := rawDockerClient()
+	if err != nil {
+		t.Fatalf("Error creating raw docker client: %s", err)
+	}
+
+	_, _, err = cli.ImageInspectWithRaw(ctx, imageName)
+	if err != nil {
+		t.Fatalf("Image does not exist on host: %s", err)
+	}
 }

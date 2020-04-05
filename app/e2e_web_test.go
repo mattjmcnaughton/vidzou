@@ -99,6 +99,8 @@ func runWebServer() (cleanUpFunc, error) {
 	if err != nil {
 		return cleanUpFunc, err
 	}
+	go downloader.BestEffortInit()
+
 	uploader := NewRemoteStoreContentUploader(s3Client, testLogger)
 	server := NewServer(testServerPort, downloader, uploader, testLogger)
 

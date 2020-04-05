@@ -13,6 +13,10 @@ const defaultAudioFormat = "mp3"
 
 type ContentDownloader interface {
 	DownloadContent(remotePath string, downloadOptions *DownloadOptions) (string, error)
+
+	// BestEffortInit contains non-critical operations which, if run before
+	// the first call of `DownloadContent`, improve performance.
+	BestEffortInit() error
 }
 
 type DownloadOptions struct {
@@ -20,9 +24,10 @@ type DownloadOptions struct {
 }
 
 type ContainerYoutubeDlContentDownloader struct {
-	containerClient ContainerClient
-	fsClient        FsClient
-	logger          logr.Logger
+	containerClient    ContainerClient
+	fsClient           FsClient
+	logger             logr.Logger
+	YoutubeDlImageName string
 }
 
 type FakeContentDownloader struct {
@@ -46,13 +51,23 @@ func NewContainerYoutubeDlContentDownloader(containerClient ContainerClient, fsC
 		containerClient: containerClient,
 		fsClient:        fsClient,
 		logger:          logger,
+
+		// Can set via constructor/setting later, should we find the need.
+		YoutubeDlImageName: "mattjmcnaughton/youtube-dl:0.0.1.a",
 	}
 }
 
 func (c *ContainerYoutubeDlContentDownloader) DownloadContent(remotePath string, downloadOptions *DownloadOptions) (string, error) {
 	c.logger.V(3).Info("Downloading content using ContainerYoutubeDl", "remotePath", remotePath)
-	// Image should be specified as constant elsewhere, probably?
-	image := "mattjmcnaughton/youtube-dl:0.0.1.a"
+
+	// When we launch the server, we kick off a background go routine to
+	// ensure the image is available on the host. As a result, this call
+	// should be a no-op the majority of the time. Still, there's no harm to
+	// having it for additional protection.
+	if err := c.containerClient.EnsureImageAvailableOnHost(c.YoutubeDlImageName); err != nil {
+		return "", err
+	}
+
 	// Mount directory should be specified as contant? Must match the
 	// published container.
 	youtubeDlMountDirectory := "/downloads"
@@ -79,11 +94,7 @@ func (c *ContainerYoutubeDlContentDownloader) DownloadContent(remotePath string,
 		binds: binds,
 	}
 
-	if err := c.containerClient.EnsureImageAvailableOnHost(image); err != nil {
-		return "", err
-	}
-
-	if err := c.containerClient.RunContainer(image, cmd, runContainerOpts); err != nil {
+	if err := c.containerClient.RunContainer(c.YoutubeDlImageName, cmd, runContainerOpts); err != nil {
 		return "", err
 	}
 
@@ -109,6 +120,10 @@ func (c *ContainerYoutubeDlContentDownloader) findFileUsingUniqueIdentifier(uniq
 	return "", fmt.Errorf("Cannot identify file with unique prefix: %s", uniqueOutputFilePrefix)
 }
 
+func (c *ContainerYoutubeDlContentDownloader) BestEffortInit() error {
+	return c.containerClient.EnsureImageAvailableOnHost(c.YoutubeDlImageName)
+}
+
 func NewFakeContentDownloader(fsClient FsClient) *FakeContentDownloader {
 	return &FakeContentDownloader{
 		fsClient: fsClient,
@@ -126,4 +141,8 @@ func (f *FakeContentDownloader) DownloadContent(remotePath string, downloadOptio
 	}
 
 	return fakeFileDownloadPath, nil
+}
+
+func (f *FakeContentDownloader) BestEffortInit() error {
+	return nil
 }

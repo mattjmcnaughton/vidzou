@@ -98,6 +98,9 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	go downloader.BestEffortInit()
+
 	uploader := NewRemoteStoreContentUploader(s3Client, logger)
 	_ = NewRemoteStoreContentGarbageCollector(s3Client, logger)
 

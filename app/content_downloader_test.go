@@ -80,3 +80,29 @@ func TestDockerContainerYoutubeDlContentDownloaderDownloadContentFailsWhenInvali
 		t.Fatalf("Should not be able to download content from invalid url")
 	}
 }
+
+func TestDockerContainerYoutubeDlContentDownloaderBestEffortInit(t *testing.T) {
+	markIntegrationTest(t)
+
+	fsClient, err := NewTmpFsClient()
+	if err != nil {
+		t.Fatalf("Error generating fsClient: %s", err)
+	}
+	defer fsClient.CleanUp()
+
+	contentDownloader, err := NewDockerYoutubeDlContentDownloader(fsClient, testLogger)
+	if err != nil {
+		t.Fatalf("Error creating new contentDownloader: %s", err)
+	}
+
+	if err = ensureImageNotOnHost(contentDownloader.YoutubeDlImageName); err != nil {
+		t.Fatalf("Error ensuring image doesn't exist on host: %s", err)
+	}
+
+	err = contentDownloader.BestEffortInit()
+	if err != nil {
+		t.Fatalf("Error running BestEffortInit: %s", err)
+	}
+
+	testImageAvailableOnHost(t, contentDownloader.YoutubeDlImageName)
+}

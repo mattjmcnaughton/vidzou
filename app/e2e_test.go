@@ -37,6 +37,7 @@ func TestAppE2ENoHTTPIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error creating content downloader: %s", err)
 	}
+	go downloader.BestEffortInit()
 	uploader := NewRemoteStoreContentUploader(s3Client, testLogger)
 	garbageCollector := NewRemoteStoreContentGarbageCollector(s3Client, testLogger)
 

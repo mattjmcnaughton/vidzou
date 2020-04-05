@@ -7,8 +7,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"testing"
-
-	"github.com/docker/docker/api/types"
 )
 
 func TestDockerClientEnsureImageAvailableOnHostIntegration(t *testing.T) {
@@ -32,37 +30,6 @@ func TestDockerClientEnsureImageAvailableOnHostIntegration(t *testing.T) {
 	}
 
 	testImageAvailableOnHost(t, demoImageToPull)
-}
-
-func ensureImageNotOnHost(imageName string) error {
-	cli, ctx, err := rawDockerClient()
-	if err != nil {
-		return err
-	}
-
-	_, _, err = cli.ImageInspectWithRaw(ctx, imageName)
-
-	imageDoesNotExistOnHost := err != nil
-	if imageDoesNotExistOnHost {
-		return nil
-	}
-
-	_, err = cli.ImageRemove(ctx, imageName, types.ImageRemoveOptions{})
-	return err
-}
-
-func testImageAvailableOnHost(t *testing.T, imageName string) {
-	t.Helper()
-
-	cli, ctx, err := rawDockerClient()
-	if err != nil {
-		t.Fatalf("Error creating raw docker client: %s", err)
-	}
-
-	_, _, err = cli.ImageInspectWithRaw(ctx, imageName)
-	if err != nil {
-		t.Fatalf("Image does not exist on host: %s", err)
-	}
 }
 
 func TestDockerClientEnsureImageAvailableOnHostImageAlreadyExistsIntegration(t *testing.T) {
