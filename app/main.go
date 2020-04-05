@@ -7,6 +7,7 @@ import (
 	"k8s.io/klog/v2"
 	"k8s.io/klog/v2/klogr"
 	"strconv"
+	"time"
 )
 
 // High level logging guidelines... use log level 0 for information which MUST
@@ -102,9 +103,10 @@ func main() {
 	go downloader.BestEffortInit()
 
 	uploader := NewRemoteStoreContentUploader(s3Client, logger)
-	_ = NewRemoteStoreContentGarbageCollector(s3Client, logger)
+	garbageCollector := NewRemoteStoreContentGarbageCollector(s3Client, logger)
 
-	// @TODO(mattjmcnaughton) Launch garbage collector in a separate goroutine.
+	garbageCollectorSleepDuration := 5 * time.Minute
+	go RunGarbageCollectionForever(garbageCollector, garbageCollectorSleepDuration, logger)
 
 	server := NewServer(8080, downloader, uploader, logger)
 	err = server.ListenAndServe(cleanUpFunc)

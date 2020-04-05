@@ -38,9 +38,26 @@ func (r *RemoteStoreContentGarbageCollector) DeleteStaleFiles(cutoffTime time.Ti
 	// responding to web requests, I'm not super worried about it for now...
 	for _, remoteFile := range remoteFiles {
 		if remoteFile.LastModified.Before(cutoffTime) {
+			r.logger.V(2).Info("Deleting stale file", "filePath", remoteFile.FilePath)
 			r.remoteStoreClient.DeleteFile(remoteFile.FilePath)
 		}
 	}
 
 	return nil
+}
+
+// TODO: Potentially decide whether there's benefit/interest in unit testing
+// this method? Tbh, I'm not sure how much it would add...
+func RunGarbageCollectionForever(gc ContentGarbageCollector, sleepDuration time.Duration, logger logr.Logger) {
+	for {
+		cutoff := time.Now().Add(-24 * time.Hour)
+		err := gc.DeleteStaleFiles(cutoff)
+		if err != nil {
+			logger.V(1).Info("Error garbage collecting stale files", "error", err)
+		}
+
+		logger.V(3).Info("Sleeping before next garbage collection", "sleepDuration", sleepDuration)
+		time.Sleep(sleepDuration)
+	}
+
 }
