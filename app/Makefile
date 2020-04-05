@@ -13,6 +13,9 @@ test:
 build:
 	go build -o main
 
+clean:
+	rm ./main
+
 run: build
 	./main -local -v 3
 
