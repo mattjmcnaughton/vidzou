@@ -84,44 +84,61 @@ func (s *Server) downloadsCreate(w http.ResponseWriter, r *http.Request) {
 
 	remotePath := r.FormValue("url")
 
-	localFilePath, err := s.contentDownloader.DownloadContent(remotePath, &DownloadOptions{audioOnly: true})
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Unable to download content: %s", err), http.StatusInternalServerError)
-		return
-	}
-
-	publicURL, err := s.contentUploader.UploadContentPublicly(localFilePath)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Unable to upload content: %s", err), http.StatusInternalServerError)
-		return
-	}
-
-	// So can we redirect via an id... Do we need to make accessing this url
-	// cache threadsafe?
-	s.logger.V(3).Info("Content download completed")
 	downloadId := generateRandomString(defaultRandomStringLength)
-	s.publicDownloadURLCache[downloadId] = publicURL
-	s.logger.V(3).Info("Redirecting based on cached download id", "downloadId", downloadId)
 
+	// TODO: Should update the `publicDownloadURLCache` to be threadsafe by
+	// protecting w/ mutex. Will likely require creating a `downloadIDToURL`
+	// interface.
+	go func() {
+		failed := false
+
+		s.logger.V(3).Info("Starting download", "downloadId", downloadId)
+		localFilePath, err := s.contentDownloader.DownloadContent(remotePath, &DownloadOptions{audioOnly: true})
+		if err != nil {
+			s.logger.V(3).Info("Download failed", "downloadId", downloadId)
+			failed = true
+		}
+		s.logger.V(3).Info("Content download completed", "downloadId", downloadId)
+
+		s.logger.V(3).Info("Starting upload", "downloadId", downloadId)
+		publicURL, err := s.contentUploader.UploadContentPublicly(localFilePath)
+		if err != nil {
+			s.logger.V(3).Info("Upload failed", "downloadId", downloadId)
+			failed = true
+		}
+		s.logger.V(3).Info("Content upload completed", "downloadId", downloadId)
+
+		if !failed {
+			s.publicDownloadURLCache[downloadId] = publicURL
+		} else {
+			// The error handling behavior could definitely be more
+			// robust.
+			failureMessage := "Failed to download video :("
+			s.publicDownloadURLCache[downloadId] = failureMessage
+		}
+	}()
+
+	s.logger.V(3).Info("Redirecting based on cached download id", "downloadId", downloadId)
 	http.Redirect(w, r, fmt.Sprintf("/downloads/%s", downloadId), http.StatusSeeOther)
 }
 
 // TODO: Naming convention for objects containing template vars...
 type downloadShowPage struct {
 	PublicDownloadURL string
+	DownloadComplete  bool
 }
 
 func (s *Server) downloadsShow(w http.ResponseWriter, r *http.Request) {
 	s.logger.V(2).Info("Serving request", "endpoint", "GET#downloads/:id")
 	vars := mux.Vars(r)
 
-	publicDownloadURL, found := s.publicDownloadURLCache[vars["id"]]
-	if !found {
-		http.NotFound(w, r)
-	}
+	p := &downloadShowPage{}
 
-	p := &downloadShowPage{
-		PublicDownloadURL: publicDownloadURL,
+	publicDownloadURL, found := s.publicDownloadURLCache[vars["id"]]
+
+	if found {
+		p.PublicDownloadURL = publicDownloadURL
+		p.DownloadComplete = true
 	}
 
 	t := template.Must(template.ParseFiles("templates/download.html"))

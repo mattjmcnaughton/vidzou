@@ -18,7 +18,7 @@ const lowercaseLetters = "abcdefghijklmnopqrstuvxyz"
 const awsRegion = "us-east-1"
 
 // TODO: Use throughout the program.
-const defaultRandomStringLength = 16
+const defaultRandomStringLength = 24
 
 func generateRandomString(randomStringLength int) string {
 	ensureRandomness()

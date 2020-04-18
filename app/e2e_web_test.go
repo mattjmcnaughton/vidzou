@@ -4,11 +4,15 @@ import (
 	"fmt"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/sclevine/agouti"
 )
 
 const testServerPort = 8081
+
+const waitBetweenAttemptsSeconds = 2
+const maxRefreshAttempts = 30
 
 // TODO: Should probably be used throughout the entire program.
 type cleanUpFunc func() error
@@ -47,9 +51,26 @@ func TestAppE2EWebIntegration(t *testing.T) {
 		t.Fatalf("Failed to click submit url of form: %s", err)
 	}
 
-	publicFileURL, err := page.FindByID("publicDownloadURL").Text()
-	if err != nil {
-		t.Fatalf("Failed to retrieve the public download url: %s", err)
+	var publicFileURL string
+	var attempts int
+	for {
+		attempts++
+		if attempts > maxRefreshAttempts {
+			t.Fatalf("Falsely showing wait after max attempts: %v", maxRefreshAttempts)
+		}
+
+		page.Refresh()
+
+		publicFileURL, err = page.FindByID("publicDownloadURL").Text()
+		if err == nil {
+			break
+		}
+
+		if _, err = page.FindByID("waitMessage").Text(); err != nil {
+			t.Fatalf("Should show #waitMessage if waiting to finish download")
+		}
+
+		time.Sleep(waitBetweenAttemptsSeconds * time.Second)
 	}
 
 	if err := driver.Stop(); err != nil {

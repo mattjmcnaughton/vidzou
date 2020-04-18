@@ -1,3 +1,18 @@
 <!-- Is this the proper naming convention for `download#show` -->
 
-<p id="publicDownloadURL">{{ .PublicDownloadURL }}</p>
+<html>
+  <head>
+    {{ if not .DownloadComplete }}
+    <!-- Automatically refresh every three seconds -->
+    <meta http-equiv="refresh" content="3">
+    {{ end }}
+  </head>
+
+  <body>
+    {{ if .DownloadComplete }}
+    <p id="publicDownloadURL">{{ .PublicDownloadURL }}</p>
+    {{ else }}
+    <p id="waitMessage">Working on downloading... will automatically refresh</p>
+    {{ end }}
+  </body>
+</html>
