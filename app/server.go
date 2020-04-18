@@ -98,9 +98,10 @@ func (s *Server) downloadsCreate(w http.ResponseWriter, r *http.Request) {
 
 	// So can we redirect via an id... Do we need to make accessing this url
 	// cache threadsafe?
-	s.logger.V(3).Info("Content download completed... id to cache")
+	s.logger.V(3).Info("Content download completed")
 	downloadId := generateRandomString(defaultRandomStringLength)
 	s.publicDownloadURLCache[downloadId] = publicURL
+	s.logger.V(3).Info("Redirecting based on cached download id", "downloadId", downloadId)
 
 	http.Redirect(w, r, fmt.Sprintf("/downloads/%s", downloadId), http.StatusSeeOther)
 }
