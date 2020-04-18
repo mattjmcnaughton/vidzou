@@ -12,6 +12,8 @@ import (
 	"syscall"
 )
 
+const FailureToDownlownLoadOrUploadVideo = "FailureToDownlownLoadOrUploadVideo"
+
 // Could define Server interface, but not sure there is any benefit...
 
 // Could use Negroni and Mux, but not sure its necessary right now...
@@ -41,11 +43,14 @@ func NewServer(port int, contentDownloader ContentDownloader, contentUploader Co
 
 func (s *Server) ListenAndServe(cleanUpFunc func() error) error {
 	s.logger.V(2).Info("Creating and launching web server")
-	r := mux.NewRouter()
 
+	r := mux.NewRouter()
 	r.HandleFunc("/downloads", s.downloadsCreate).Methods("POST")
 	r.HandleFunc("/downloads/{id}", s.downloadsShow).Methods("GET")
 	r.HandleFunc("/", s.index).Methods("GET")
+
+	fileServer := http.FileServer(http.Dir("./templates/static"))
+	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fileServer))
 
 	signalCh := make(chan os.Signal)
 	signal.Notify(signalCh, os.Interrupt, os.Kill, syscall.SIGTERM)
@@ -97,24 +102,23 @@ func (s *Server) downloadsCreate(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			s.logger.V(3).Info("Download failed", "downloadId", downloadId)
 			failed = true
+		} else {
+			s.logger.V(3).Info("Content download completed", "downloadId", downloadId)
 		}
-		s.logger.V(3).Info("Content download completed", "downloadId", downloadId)
 
 		s.logger.V(3).Info("Starting upload", "downloadId", downloadId)
 		publicURL, err := s.contentUploader.UploadContentPublicly(localFilePath)
 		if err != nil {
 			s.logger.V(3).Info("Upload failed", "downloadId", downloadId)
 			failed = true
+		} else {
+			s.logger.V(3).Info("Content upload completed", "downloadId", downloadId)
 		}
-		s.logger.V(3).Info("Content upload completed", "downloadId", downloadId)
 
 		if !failed {
 			s.publicDownloadURLCache[downloadId] = publicURL
 		} else {
-			// The error handling behavior could definitely be more
-			// robust.
-			failureMessage := "Failed to download video :("
-			s.publicDownloadURLCache[downloadId] = failureMessage
+			s.publicDownloadURLCache[downloadId] = FailureToDownlownLoadOrUploadVideo
 		}
 	}()
 
@@ -126,6 +130,7 @@ func (s *Server) downloadsCreate(w http.ResponseWriter, r *http.Request) {
 type downloadShowPage struct {
 	PublicDownloadURL string
 	DownloadComplete  bool
+	DownloadFailed    bool
 }
 
 func (s *Server) downloadsShow(w http.ResponseWriter, r *http.Request) {
@@ -137,8 +142,13 @@ func (s *Server) downloadsShow(w http.ResponseWriter, r *http.Request) {
 	publicDownloadURL, found := s.publicDownloadURLCache[vars["id"]]
 
 	if found {
-		p.PublicDownloadURL = publicDownloadURL
 		p.DownloadComplete = true
+
+		if publicDownloadURL == FailureToDownlownLoadOrUploadVideo {
+			p.DownloadFailed = true
+		} else {
+			p.PublicDownloadURL = publicDownloadURL
+		}
 	}
 
 	t := template.Must(template.ParseFiles("templates/download.html"))

@@ -1,18 +1,47 @@
-<!-- Is this the proper naming convention for `download#show` -->
-
 <html>
   <head>
+    <title>vidzou</title>
+    <link rel="stylesheet" href="/static/bulma.min.css">
     {{ if not .DownloadComplete }}
-    <!-- Automatically refresh every three seconds -->
-    <meta http-equiv="refresh" content="3">
+    <meta http-equiv="refresh" content="5">
     {{ end }}
   </head>
 
   <body>
     {{ if .DownloadComplete }}
-    <p id="publicDownloadURL">{{ .PublicDownloadURL }}</p>
+    <section class="hero is-success is-fullheight">
+      <div class="hero-body">
+        <div class="container">
+          <h1 class="title">Success!</h1>
+          <h2 class="subtitle">
+            Click <a class="has-text-weight-bold" id="publicDownloadURL" href="{{ .PublicDownloadURL }}">here</a> to download your video.
+            Click <a class="has-text-weight-bold" href="/">here</a> to download another video.
+          </h2>
+        </div>
+      </div>
+    </section>
+    {{ else if .DownloadFailed }}
+    <section class="hero is-danger is-fullheight">
+      <div class="hero-body">
+        <div class="container">
+          <h1 class="title" id="failure">Uh oh! We failed to download your video...</h1>
+          <h2 class="subtitle">
+            Click <a class="has-text-weight-bold" href="/">here</a> to attempt downloading a different video.
+          </h2>
+        </div>
+      </div>
+    </section>
     {{ else }}
-    <p id="waitMessage">Working on downloading... will automatically refresh</p>
+    <section class="hero is-light is-fullheight">
+      <div class="hero-body">
+        <div class="container">
+          <h1 class="title" id="waitMessage">We're still working on it!</h1>
+          <h2 class="subtitle">
+            Your video is still downloading... we'll keep on checking if it's done...
+          </h2>
+        </div>
+      </div>
+    </section>
     {{ end }}
   </body>
 </html>

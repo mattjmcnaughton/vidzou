@@ -1,9 +1,27 @@
-<!-- TODO: Establish base html which I'll include everywhere -->
-<!-- TODO: Establish best practices, etc... for html, css, etc... -->
+<!-- TODO: If I have time, can consider extracting out a base html template... -->
+<html>
+  <head>
+    <title>vidzou</title>
+    <link rel="stylesheet" href="/static/bulma.min.css">
+  </head>
 
-<h1>Welcome to vidzou</h1>
-
-<form id="downloadForm" method="POST" action="/downloads">
-    <label>URL</label><input name="url" type="text" value="" />
-    <input type="submit" value="submit" />
-</form>
+  <body>
+    <section class="hero is-primary is-fullheight">
+      <div class="hero-body">
+        <div class="container">
+          <h1 class="title">Welcome to vidzou...</h1>
+          <form class="subtitle" id="downloadForm" method="POST" action="/downloads">
+            <div class="field has-addons">
+              <p class="control">
+                <input class="input" name="url" type="text" placeholder="Enter a URL to download" />
+              </p>
+              <p class="control">
+                <input class="button" type="submit" value="submit" />
+              </p>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+  </body>
+</html>

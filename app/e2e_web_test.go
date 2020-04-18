@@ -61,7 +61,7 @@ func TestAppE2EWebIntegration(t *testing.T) {
 
 		page.Refresh()
 
-		publicFileURL, err = page.FindByID("publicDownloadURL").Text()
+		publicFileURL, err = page.FindByID("publicDownloadURL").Attribute("href")
 		if err == nil {
 			break
 		}
