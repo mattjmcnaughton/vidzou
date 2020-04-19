@@ -95,31 +95,30 @@ func (s *Server) downloadsCreate(w http.ResponseWriter, r *http.Request) {
 	// protecting w/ mutex. Will likely require creating a `downloadIDToURL`
 	// interface.
 	go func() {
-		failed := false
+		// `FailureToDownlownLoadOrUploadVideo` is an indicator that the
+		// upload failed. Long term, I'd like to avoid overloading the
+		// downloadIDToURL mapping... but for now this is fine.
+		publicURL := FailureToDownlownLoadOrUploadVideo
 
 		s.logger.V(3).Info("Starting download", "downloadId", downloadId)
 		localFilePath, err := s.contentDownloader.DownloadContent(remotePath, &DownloadOptions{audioOnly: true})
-		if err != nil {
-			s.logger.V(3).Info("Download failed", "downloadId", downloadId)
-			failed = true
-		} else {
-			s.logger.V(3).Info("Content download completed", "downloadId", downloadId)
-		}
+		s.logger.V(3).Info("Content download completed", "downloadId", downloadId)
 
-		s.logger.V(3).Info("Starting upload", "downloadId", downloadId)
-		publicURL, err := s.contentUploader.UploadContentPublicly(localFilePath)
-		if err != nil {
-			s.logger.V(3).Info("Upload failed", "downloadId", downloadId)
-			failed = true
-		} else {
+		if err == nil {
+			s.logger.V(3).Info("Starting upload", "downloadId", downloadId)
+			possPublicURL, err := s.contentUploader.UploadContentPublicly(localFilePath)
 			s.logger.V(3).Info("Content upload completed", "downloadId", downloadId)
+
+			if err != nil {
+				s.logger.V(3).Info("Upload failed", "downloadId", downloadId)
+			} else {
+				publicURL = possPublicURL
+			}
+		} else {
+			s.logger.V(3).Info("Download failed", "downloadId", downloadId)
 		}
 
-		if !failed {
-			s.publicDownloadURLCache[downloadId] = publicURL
-		} else {
-			s.publicDownloadURLCache[downloadId] = FailureToDownlownLoadOrUploadVideo
-		}
+		s.publicDownloadURLCache[downloadId] = publicURL
 	}()
 
 	s.logger.V(3).Info("Redirecting based on cached download id", "downloadId", downloadId)
@@ -130,7 +129,6 @@ func (s *Server) downloadsCreate(w http.ResponseWriter, r *http.Request) {
 type downloadShowPage struct {
 	PublicDownloadURL string
 	DownloadComplete  bool
-	DownloadFailed    bool
 }
 
 func (s *Server) downloadsShow(w http.ResponseWriter, r *http.Request) {
@@ -140,13 +138,10 @@ func (s *Server) downloadsShow(w http.ResponseWriter, r *http.Request) {
 	p := &downloadShowPage{}
 
 	publicDownloadURL, found := s.publicDownloadURLCache[vars["id"]]
-
 	if found {
 		p.DownloadComplete = true
 
-		if publicDownloadURL == FailureToDownlownLoadOrUploadVideo {
-			p.DownloadFailed = true
-		} else {
+		if publicDownloadURL != FailureToDownlownLoadOrUploadVideo {
 			p.PublicDownloadURL = publicDownloadURL
 		}
 	}

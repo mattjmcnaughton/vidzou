@@ -30,7 +30,7 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 RUN mkdir /downloads
 RUN chmod 777 /downloads
 
-ARG youtube_dl_version=2019.11.28
+ARG youtube_dl_version=2020.03.24
 
 # Download and validate the youtube-dl binary.
 RUN wget https://github.com/ytdl-org/youtube-dl/releases/download/$youtube_dl_version/youtube-dl
