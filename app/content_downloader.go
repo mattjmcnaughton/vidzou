@@ -53,7 +53,7 @@ func NewContainerYoutubeDlContentDownloader(containerClient ContainerClient, fsC
 		logger:          logger,
 
 		// Can set via constructor/setting later, should we find the need.
-		YoutubeDlImageName: "mattjmcnaughton/youtube-dl:2020.03.24",
+		YoutubeDlImageName: "mattjmcnaughton/youtube-dl:2020.05.29",
 	}
 }
 
